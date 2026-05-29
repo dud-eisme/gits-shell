@@ -1,9 +1,10 @@
 #include <filesystem>
 #include <iostream>
-#include <vector>
 #include <sstream>
+#include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+#include <vector>
 
 #include "necessary.hpp"
 
@@ -25,11 +26,12 @@ void set_raw_mode(bool enable) {
   }
 }
 
-std::vector<std::string> tokenize(const std::string& input) {
+std::vector<std::string> tokenize(const std::string &input) {
   std::vector<std::string> tokens;
   std::string token;
   std::istringstream tokenStream(input);
-  while (tokenStream >> token) tokens.push_back(token);
+  while (tokenStream >> token)
+    tokens.push_back(token);
   return tokens;
 }
 
@@ -52,7 +54,8 @@ int main() {
     int ch;
 
     while ((ch = getchar()) != EOF) {
-      if (ch == '\n' || ch == '\r') break;
+      if (ch == '\n' || ch == '\r')
+        break;
 
       else if (ch == 127 || ch == 8) {
         if (!input_buffer.empty()) {
@@ -75,10 +78,15 @@ int main() {
     if (!args.empty()) {
       if (args[0] == "pwd")
         dud::pwd(cwd_path);
-      else if (args[0] == "exit")
+      else if (args[0] == "cd") {
+        dud::cd(args);
+      } else if (args[0] == "exit")
         return 0;
-      else
-       std::cout << "Command Not Found\n";
+      else {
+        set_raw_mode(false);
+        dud::execute_external_commands(args);
+        set_raw_mode(true);
+      }
     }
   }
 }
