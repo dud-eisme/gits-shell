@@ -6,7 +6,11 @@
 #include "headerfiles.hpp"
 
 namespace dud {
-void pwd(std::filesystem::path cwd_path) {
+void pwd(std::filesystem::path cwd_path, std::vector<std::string>& args) {
+  if (args.size() > 1) {
+    std::cerr << "pwd: expected 0 arguments; got " << args.size() - 1 << '\n';
+    return;
+  }
   std::cout << cwd_path.string() << '\n';
 }
 
@@ -15,7 +19,7 @@ void cd(std::vector<std::string> &args) {
   if (args.size() == 1) {
     const char *home = std::getenv("HOME");
     if (home == nullptr) {
-      std::cerr << "GitS: cd: HOME environment variable not found.\n";
+      std::cerr << "cd: HOME environment variable not found.\n";
       return;
     }
     target_dir = home;
@@ -37,12 +41,12 @@ void cd(std::vector<std::string> &args) {
   }
 
   else {
-    std::cerr << "GitS: cd: too many arguments.\n";
+    std::cerr << "cd: expected 1 arguments; got " << args.size() - 1 << '\n';
     return;
   }
 
   if (chdir(target_dir.c_str()) != 0)
-    perror("GitS: cd");
+    perror("cd");
 }
 
 void execute_external_commands(const std::vector<std::string> &args) {

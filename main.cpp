@@ -77,7 +77,7 @@ int main() {
 
     if (!args.empty()) {
       if (args[0] == "pwd")
-        dud::pwd(cwd_path);
+        dud::pwd(cwd_path, args);
       else if (args[0] == "cd") {
         dud::cd(args);
       } else if (args[0] == "exit")
