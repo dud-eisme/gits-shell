@@ -30,7 +30,7 @@ void set_raw_mode(bool enable) {
     tcgetattr(STDIN_FILENO, &oldt);
 
     newt = oldt;
-    // Disable ICANON (line buffering), ECHO (visual stream reflection), 
+    // Disable ICANON (line buffering), ECHO (visual stream reflection),
     // and ISIG (automatic hardware Ctrl+C / Ctrl+Z kernel interrupts)
     newt.c_lflag &= ~(ICANON | ECHO | ISIG);
 
@@ -93,7 +93,8 @@ int main() {
     std::filesystem::path cwd_path = std::filesystem::current_path();
     std::string cwd = cwd_path.string();
 
-    // Pretty-print formatting: Replace home string matches with a clean tilde (~)
+    // Pretty-print formatting: Replace home string matches with a clean tilde
+    // (~)
     if (cwd.starts_with("/home/joe"))
       cwd = "~" + cwd.substr(9);
     std::cout << cwd << "> ";
@@ -138,7 +139,8 @@ int main() {
         if (cursor_idx > 0) {
           input_buffer.erase(cursor_idx - 1, 1);
           cursor_idx--;
-          // Redraw text to the right of the deleted character, clean end artifact, reset position
+          // Redraw text to the right of the deleted character, clean end
+          // artifact, reset position
           std::cout << "\b" << input_buffer.substr(cursor_idx) << " \b";
           for (size_t i = cursor_idx; i < input_buffer.length(); i++)
             std::cout << "\b";
@@ -161,7 +163,8 @@ int main() {
               size_t total_visual_idx = prompt_len + cursor_idx;
               size_t curr_col = total_visual_idx % terminal_width;
               cursor_idx++;
-              // Wrap cursor down to the start of the next line row if bounding wall is broken
+              // Wrap cursor down to the start of the next line row if bounding
+              // wall is broken
               if (curr_col == terminal_width - 1)
                 std::cout << "\n\r" << std::flush;
               else
@@ -179,33 +182,42 @@ int main() {
               cursor_idx--;
               // Warp cursor up to the far right margin edge of the row above
               if (curr_col == 0)
-                std::cout << "\033[A" << "\033[" << terminal_width << "C" << std::flush;
+                std::cout << "\033[A" << "\033[" << terminal_width << "C"
+                          << std::flush;
               else
                 std::cout << "\033[D" << std::flush;
             }
           }
           // UP ARROW KEY (PREVIOUS HISTORY LOG)
           else if (next2 == 'A') {
-            if (history_idx < history_cache.size()) {
-              history_idx++;
-              input_buffer = history_cache[history_cache.size() - history_idx];
-              cursor_idx = input_buffer.size();
-              std::cout << "\r" << cwd << "> \33[K" << input_buffer << std::flush;
+            if (!(history_idx == 0 && !input_buffer.empty())) {
+              if (history_idx < history_cache.size()) {
+                history_idx++;
+                input_buffer =
+                    history_cache[history_cache.size() - history_idx];
+                cursor_idx = input_buffer.size();
+                std::cout << "\r" << cwd << "> \33[K" << input_buffer
+                          << std::flush;
+              }
             }
           }
           // DOWN ARROW KEY (NEXT HISTORY LOG)
           else if (next2 == 'B') {
-            if (history_idx > 0) {
-              history_idx--;
-              if (history_idx == 0) {
-                input_buffer = "";
-                cursor_idx = 0;
+            if (!(history_idx == 0 && !input_buffer.empty())) {
+              if (history_idx > 0) {
+                history_idx--;
+                if (history_idx == 0) {
+                  input_buffer = "";
+                  cursor_idx = 0;
+                }
+                else {
+                  input_buffer =
+                      history_cache[history_cache.size() - history_idx];
+                  cursor_idx = input_buffer.size();
+                }
+                std::cout << "\r" << cwd << "> \33[K" << input_buffer
+                          << std::flush;
               }
-              else {
-                input_buffer = history_cache[history_cache.size() - history_idx];
-                cursor_idx = input_buffer.size();
-              }
-              std::cout << "\r" << cwd << "> \33[K" << input_buffer << std::flush;
             }
           }
         }
@@ -220,7 +232,8 @@ int main() {
         // Render insertion adjustments from cursor index onwards
         std::cout << input_buffer.substr(cursor_idx - 1) << std::flush;
 
-        // Shift hardware terminal cursor position back to match user's relative pointer
+        // Shift hardware terminal cursor position back to match user's relative
+        // pointer
         for (size_t i = cursor_idx; i < input_buffer.length(); i++)
           std::cout << "\033[D";
         std::cout << std::flush;
@@ -233,7 +246,8 @@ int main() {
     size_t total_len = prompt_len + input_buffer.length();
     size_t cursor_row = (prompt_len + cursor_idx) / terminal_width;
 
-    // Reset visual cursor rows up to baseline row before printing execution diagnostics
+    // Reset visual cursor rows up to baseline row before printing execution
+    // diagnostics
     if (cursor_idx > 0) {
       for (size_t i = 0; i < cursor_row; i++) {
         std::cout << "\r\033[K";
@@ -242,13 +256,15 @@ int main() {
     }
     std::cout << "\r\033[K-> " << input_buffer;
 
-    set_raw_mode(false); // Drop raw layout attributes to execute standard processing
+    set_raw_mode(
+        false); // Drop raw layout attributes to execute standard processing
     std::cout << "\n";
 
     std::vector<std::string> args = tokenize(input_buffer);
 
     //------------------- LOG FILE PERSISTENCE ENGINE -------------//
-    std::ofstream shell_history_file(home + "/.local/share/.gits_history", std::ios::app);
+    std::ofstream shell_history_file(home + "/.local/share/.gits_history",
+                                     std::ios::app);
     if (!shell_history_file.is_open())
       std::cerr << "Could not open shell history file.\n";
 
@@ -258,7 +274,7 @@ int main() {
       if (i + 1 < args.size())
         line += " ";
     }
-    if (!line.empty()) {
+    if (!line.empty() && line != history_cache[history_cache.size() - 1]) {
       history_cache.push_back(line);
       shell_history_file << line << '\n';
     }
