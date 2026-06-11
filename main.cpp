@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
@@ -29,6 +30,12 @@ void set_raw_mode(bool enable) {
   else {
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
   }
+}
+
+size_t get_terminal_width() {
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  return w.ws_col;
 }
 
 std::vector<std::string> tokenize(const std::string &input) {
@@ -75,10 +82,27 @@ int main() {
         break;
 
       else if (ch == 3) {
+        size_t terminal_width = get_terminal_width();
+        size_t prompt_len = cwd.length() + 2;
+        size_t total_len = prompt_len + input_buffer.length();
+        size_t cursor_row = (prompt_len + cursor_idx) / terminal_width;
+
+        if (cursor_idx > 0) {
+          for (size_t i = 0; i < cursor_row; i++) {
+            std::cout << "\r\033[K";
+            std::cout << "\033[A";
+          }
+        }
+
+        std::cout << "\r\033[K";
+
         input_buffer.clear();
         cursor_idx = 0;
-        std::cout << "\r" << cwd << "> \33[K";
-        std::cout << input_buffer << std::flush;
+        history_idx = 0;
+
+        std::cout << cwd << "> " << std::flush;
+
+        continue;
       }
 
       else if (ch == 127 || ch == 8) {
@@ -99,14 +123,31 @@ int main() {
         if (next1 == '[') {
           if (next2 == 'C') {
             if (cursor_idx < input_buffer.length()) {
+              size_t terminal_width = get_terminal_width();
+              size_t prompt_len = cwd.length() + 2;
+
+              size_t total_visual_idx = prompt_len + cursor_idx;
+              size_t curr_col = total_visual_idx % terminal_width;
               cursor_idx++;
-              std::cout << "\033[C" << std::flush;
+              if (curr_col == terminal_width - 1)
+                std::cout << "\n\r" << std::flush;
+              else
+                std::cout << "\033[C" << std::flush;
             }
           }
           else if (next2 == 'D') {
             if (cursor_idx > 0) {
+              size_t terminal_width = get_terminal_width();
+              size_t prompt_len = cwd.length() + 2;
+
+              size_t total_visual_idx = prompt_len + cursor_idx;
+              size_t curr_col = total_visual_idx % terminal_width;
               cursor_idx--;
-              std::cout << "\033[D" << std::flush;
+              if (curr_col == 0)
+                std::cout << "\033[A" << "\033[" << terminal_width << "C"
+                          << std::flush;
+              else
+                std::cout << "\033[D" << std::flush;
             }
           }
           else if (next2 == 'A') {
@@ -150,8 +191,22 @@ int main() {
       }
     }
 
+    size_t terminal_width = get_terminal_width();
+    size_t prompt_len = cwd.length() + 2;
+    size_t total_len = prompt_len + input_buffer.length();
+    size_t cursor_row = (prompt_len + cursor_idx) / terminal_width;
+
+    if (cursor_idx > 0) {
+      for (size_t i = 0; i < cursor_row; i++) {
+        std::cout << "\r\033[K";
+        std::cout << "\033[A";
+      }
+    }
+    std::cout << "\r\033[K-> " << input_buffer;
+
+
     set_raw_mode(false);
-    std::cout << '\n';
+    std::cout << "\n";
 
     std::vector<std::string> args = tokenize(input_buffer);
 
@@ -172,13 +227,24 @@ int main() {
     }
     shell_history_file.close();
 
+    for (size_t i = 0; i < args.size(); i++) {
+      if (args[i].starts_with("~"))
+        args[i] = home + args[i].substr(1);
+    }
+
     if (!args.empty()) {
       if (args[0] == "pwd")
         dud::pwd(cwd_path, args);
       else if (args[0] == "cd")
         dud::cd(previous_wd, cwd, args);
+      else if (args[0] == "history.clear") {
+        std::ofstream shell_history_file(home + "/.local/share/.gits_history");
+        shell_history_file << "";
+        shell_history_file.close();
+      }
       else if (args[0] == "exit") {
         shell_history_file.close();
+        std::cout << "exit\n";
         return 0;
       }
       else {
