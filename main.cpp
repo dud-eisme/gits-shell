@@ -6,7 +6,6 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
-#include <csignal>
 #include <vector>
 
 #include "necessary.hpp"
@@ -23,7 +22,7 @@ void set_raw_mode(bool enable) {
     tcgetattr(STDIN_FILENO, &oldt);
 
     newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
+    newt.c_lflag &= ~(ICANON | ECHO | ISIG);
 
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
   }
@@ -42,8 +41,6 @@ std::vector<std::string> tokenize(const std::string &input) {
 }
 
 int main() {
-  std::signal(SIGINT, SIG_IGN);
-  std::signal(SIGTSTP, SIG_IGN);
 
   std::ifstream shell_history_file(home + "/.local/share/.gits_history");
   std::vector<std::string> history_cache;
@@ -58,11 +55,10 @@ int main() {
 
   std::string previous_wd = "";
 
-  int history_idx = 0;
-
   set_raw_mode(true);
 
   while (true) {
+    int history_idx = 0;
     std::filesystem::path cwd_path = std::filesystem::current_path();
     std::string cwd = cwd_path.string();
 
@@ -77,6 +73,13 @@ int main() {
     while ((ch = getchar()) != EOF) {
       if (ch == '\n' || ch == '\r')
         break;
+
+      else if (ch == 3) {
+        input_buffer.clear();
+        cursor_idx = 0;
+        std::cout << "\r" << cwd << "> \33[K";
+        std::cout << input_buffer << std::flush;
+      }
 
       else if (ch == 127 || ch == 8) {
         if (cursor_idx > 0) {
@@ -111,7 +114,7 @@ int main() {
               history_idx++;
               input_buffer = history_cache[history_cache.size() - history_idx];
               cursor_idx = input_buffer.size();
-              std::cout << "\r" << cwd << ">\33[K";
+              std::cout << "\r" << cwd << "> \33[K";
               std::cout << input_buffer << std::flush;
             }
           }
@@ -127,7 +130,7 @@ int main() {
                     history_cache[history_cache.size() - history_idx];
                 cursor_idx = input_buffer.size();
               }
-              std::cout << "\r" << cwd << ">\33[K";
+              std::cout << "\r" << cwd << "> \33[K";
               std::cout << input_buffer << std::flush;
             }
           }
@@ -135,6 +138,7 @@ int main() {
       }
 
       else {
+        history_idx = 0;
         input_buffer.insert(cursor_idx, 1, static_cast<char>(ch));
         cursor_idx++;
 
@@ -158,15 +162,14 @@ int main() {
 
     line = "";
     for (size_t i = 0; i < args.size(); ++i) {
-      shell_history_file << args[i];
       line += args[i];
-      if (i + 1 < args.size()) {
-        shell_history_file << " ";
+      if (i + 1 < args.size())
         line += " ";
-      }
     }
-    shell_history_file << "\n";
-    history_cache.push_back(line);
+    if (!line.empty()) {
+      history_cache.push_back(line);
+      shell_history_file << line << '\n';
+    }
     shell_history_file.close();
 
     if (!args.empty()) {
