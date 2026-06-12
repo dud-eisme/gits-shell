@@ -39,7 +39,7 @@ The codebase utilizes a clean, decoupled design pattern separating blueprints (`
 # ⚙️ Build & Run
 ### Build the shell
 ```bash
-g++ -std=c++20 *.cpp -o gits
+make
 ```
 ### Launch the shell
 ```bash
