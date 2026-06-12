@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+
+namespace Shell::History {
 //===================================================================//
 //                       HISTORY INITIALIZATION                      //
 //===================================================================//
@@ -89,3 +91,4 @@ void updateLogCache(std::string home, std::vector<std::string> &history_cache,
 
   shell_history_file.close();
 }
+} // namespace Shell::History
