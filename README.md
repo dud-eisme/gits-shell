@@ -17,24 +17,27 @@ The codebase utilizes a clean, decoupled design pattern separating blueprints (`
 
 ### Directory Tree Overview
 ```text
-├── BuiltIn.hpp     # Blueprints for internal core commands (cd, pwd, clear)
-├── BuiltIn.cpp
-├── Core.hpp        # String parsing pipeline and process routing tables
-├── Core.cpp
-├── Terminal.hpp    # Unbuffered key parsing and terminal state toggles
-├── Terminal.cpp
-├── History.hpp     # Read/Write streams for persistent terminal caching
-├── History.cpp
-├── main.cpp        # Global REPL loop execution block
-└── README.md
+├── src/
+│   ├── BuiltIn.hpp          # Blueprints for internal core commands (cd, pwd, clear)
+│   ├── BuiltIn.cpp
+│   ├── Core.hpp             # Pipeline structs, tokenization, and command routing engines
+│   ├── Core.cpp             # Splitting logic for operators (| , > , < , >>)
+│   ├── Terminal.hpp         # Unbuffered key parsing and raw terminal state toggles
+│   ├── Terminal.cpp         # Custom TTY manipulation via termios zero-latch
+│   ├── History.hpp          # Read/Write streams for persistent terminal operational logs
+│   ├── History.cpp
+│   └── main.cpp             # Global REPL loop execution block and raw mode manager
+├── .gitignore               # Excludes binary footprints (gits) and build/ artifacts
+├── Makefile                 # Automated build directives compilation matrix
+└── README.md                # Project architecture overview and future roadmap
 ```
 
 # 🛠️ Core Features
-*Raw Mode Engine: Bypasses standard line buffering (ICANON) and automatic echoing (ECHO) via termios to intercept raw keystrokes (getchar()) in real-time.
-*Smart Multiline Wrapping: Queries terminal columns dynamically via ioctl to keep the physical cursor synchronized with the internal input buffer during wraps.
-*Surgical Ctrl+C Aborts: Overrides kernel signals to cleanly scrub only the active input lines using terminal escape codes (\33[K, \33[A) without altering scrollback history.
-*Process Isolation: Spawns external binaries inside a safe, isolated fork() and execvp() pipeline, temporarily suspending raw mode during execution.
-*Git Awareness: Automatically monitors directory paths for local .git footprints to attach real-time repository context tags to the prompt.
+* **Raw Mode Engine:** Bypasses standard line buffering (`ICANON`) and automatic echoing (`ECHO`) via `termios` to intercept raw keystrokes (`getchar()`) in real-time.
+* **Smart Multiline Wrapping:** Queries terminal columns dynamically via `ioctl` to keep the physical cursor synchronized with the internal input buffer during wraps.
+* **Surgical Ctrl+C Aborts:** Overrides kernel signals to cleanly scrub only the active input lines using terminal escape codes (`\33[K`, `\33[A`) without altering scrollback history.
+* **Process Isolation:** Spawns external binaries inside a safe, isolated `fork()` and `execvp()` pipeline, temporarily suspending raw mode during execution.
+* **Git Awareness:** Automatically monitors directory paths for local `.git` footprints to attach real-time repository context tags to the prompt.
 
 # ⚙️ Build & Run
 ### Build the shell
