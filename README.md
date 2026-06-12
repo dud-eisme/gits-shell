@@ -27,3 +27,21 @@ The codebase utilizes a clean, decoupled design pattern separating blueprints (`
 ├── History.cpp
 ├── main.cpp        # Global REPL loop execution block
 └── README.md
+```
+
+# 🛠️ Core Features
+*Raw Mode Engine: Bypasses standard line buffering (ICANON) and automatic echoing (ECHO) via termios to intercept raw keystrokes (getchar()) in real-time.
+*Smart Multiline Wrapping: Queries terminal columns dynamically via ioctl to keep the physical cursor synchronized with the internal input buffer during wraps.
+*Surgical Ctrl+C Aborts: Overrides kernel signals to cleanly scrub only the active input lines using terminal escape codes (\33[K, \33[A) without altering scrollback history.
+*Process Isolation: Spawns external binaries inside a safe, isolated fork() and execvp() pipeline, temporarily suspending raw mode during execution.
+*Git Awareness: Automatically monitors directory paths for local .git footprints to attach real-time repository context tags to the prompt.
+
+# ⚙️ Build & Run
+### Build the shell
+```bash
+g++ -std=c++20 *.cpp -o gits
+```
+### Launch the shell
+```bash
+./gits
+```
