@@ -1,6 +1,6 @@
 # Compiler configuration
 CXX      := g++
-CXXFLAGS := -std=c++20 -Wall -Wextra -Isrc -MMD -MP
+CXXFLAGS := -std=c++20 -Wall -Wextra -Iinclude -MMD -MP
 LDLIBS   := -lgit2
 
 # Target executable name
@@ -8,6 +8,7 @@ TARGET   := gits
 
 # Directories
 SRC_DIR  := src
+INC_DIR  := include
 BUILD_DIR:= build
 
 # Source and Object file discovery
@@ -48,7 +49,7 @@ clean:
 	rm -rf $(BUILD_DIR) $(TARGET)
 
 fmt:
-	clang-format -i -style="{BasedOnStyle: LLVM, BreakBeforeBraces: Stroustrup}" src/*.cpp src/*.hpp
+	clang-format -i -style="{BasedOnStyle: LLVM, BreakBeforeBraces: Stroustrup}" src/*.cpp include/*.hpp
 	@echo "Format Done"
 
 # Declaring targets that aren't physical files to avoid naming conflicts

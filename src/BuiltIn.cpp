@@ -2,21 +2,13 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
 
 namespace Shell::BuiltIn {
 
-//===================================================================//
-//                         PWD INTERNAL COMMAND                      //
-//===================================================================//
-
-/**
- * @brief Prints the absolute path of the current working directory to stdout.
- * @param args Tokenized user parameters used to verify syntax boundary rules.
- */
-void pwd(std::vector<std::string> &args) {
+void pwd(std::vector<std::string> &args)
+{
   if (args.size() > 1) {
     std::cerr << "pwd: expected 0 arguments; got " << args.size() - 1 << '\n';
     return;
@@ -25,21 +17,9 @@ void pwd(std::vector<std::string> &args) {
   std::cout << std::filesystem::current_path().string() << '\n';
 }
 
-//===================================================================//
-//                          CD INTERNAL COMMAND                      //
-//===================================================================//
-
-/**
- * @brief Manages runtime shell directory mutations and historical state
- * updates.
- * @param home The verified global safe string copy of the user's $HOME
- * directory profile.
- * @param previous_wd Reference to the historical workspace tracking buffer
- * (used for 'cd -').
- * @param args Tokenized parameters specifying targeted destination paths.
- */
 void cd(const std::string &home, std::string &previous_wd,
-        std::vector<std::string> &args) {
+        std::vector<std::string> &args)
+{
   std::string target_dir;
 
   if (args.size() == 1) {
@@ -56,6 +36,7 @@ void cd(const std::string &home, std::string &previous_wd,
       target_dir = home + target_dir;
     }
     else if (target_dir == "-") {
+      // `cd -`: return to the previous working directory.
       if (previous_wd.empty()) {
         std::cerr << "cd: OLDPWD not set\n";
         return;
@@ -67,8 +48,6 @@ void cd(const std::string &home, std::string &previous_wd,
         target_dir.erase(0, 1);
         target_dir = home + target_dir;
       }
-
-      std::cout << target_dir << '\n';
     }
   }
   else {
@@ -86,21 +65,12 @@ void cd(const std::string &home, std::string &previous_wd,
   }
 }
 
-//===================================================================//
-//                     HISTORY CLEAR INTERNAL COMMAND                //
-//===================================================================//
-
-/**
- * @brief Flushes the persistent local shell history record on disk.
- * @param home The verified global safe string copy of the user's $HOME
- * directory profile.
- */
-void history_clear(const std::string &home) {
+void history_clear(const std::string &home)
+{
   std::ofstream shell_history_file(home + "/.local/share/.gits_history");
 
   if (!shell_history_file.is_open()) {
-    std::cerr
-        << "history.clear: Failed to open log file configuration mapping.\n";
+    std::cerr << "history.clear: failed to open history file.\n";
     return;
   }
 

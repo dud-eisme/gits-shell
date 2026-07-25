@@ -1,0 +1,110 @@
+[
+  {
+    "file": "src/BuiltIn.cpp",
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-MMD",
+      "-MP",
+      "-c",
+      "src/BuiltIn.cpp",
+      "-o",
+      "build/BuiltIn.o"
+    ],
+    "directory": "/home/joe/Workspace/ProjectsIg/gits-shell",
+    "output": "build/BuiltIn.o"
+  },
+  {
+    "file": "src/Core.cpp",
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-MMD",
+      "-MP",
+      "-c",
+      "src/Core.cpp",
+      "-o",
+      "build/Core.o"
+    ],
+    "directory": "/home/joe/Workspace/ProjectsIg/gits-shell",
+    "output": "build/Core.o"
+  },
+  {
+    "file": "src/Git.cpp",
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-MMD",
+      "-MP",
+      "-c",
+      "src/Git.cpp",
+      "-o",
+      "build/Git.o"
+    ],
+    "directory": "/home/joe/Workspace/ProjectsIg/gits-shell",
+    "output": "build/Git.o"
+  },
+  {
+    "file": "src/History.cpp",
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-MMD",
+      "-MP",
+      "-c",
+      "src/History.cpp",
+      "-o",
+      "build/History.o"
+    ],
+    "directory": "/home/joe/Workspace/ProjectsIg/gits-shell",
+    "output": "build/History.o"
+  },
+  {
+    "file": "src/Terminal.cpp",
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-MMD",
+      "-MP",
+      "-c",
+      "src/Terminal.cpp",
+      "-o",
+      "build/Terminal.o"
+    ],
+    "directory": "/home/joe/Workspace/ProjectsIg/gits-shell",
+    "output": "build/Terminal.o"
+  },
+  {
+    "file": "src/main.cpp",
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++20",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-MMD",
+      "-MP",
+      "-c",
+      "src/main.cpp",
+      "-o",
+      "build/main.o"
+    ],
+    "directory": "/home/joe/Workspace/ProjectsIg/gits-shell",
+    "output": "build/main.o"
+  }
+]
