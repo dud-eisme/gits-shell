@@ -203,7 +203,7 @@ std::string read_input_line(const std::string &cwd,
           }
           cursor_idx = input_buffer.size();
 
-          std::cout << "\r" << cwd << "\n> \33[K" << input_buffer << std::flush;
+          std::cout << "\r>\33[K" << input_buffer << std::flush;
         }
 
         // Down arrow: step forward through history.
@@ -235,7 +235,7 @@ std::string read_input_line(const std::string &cwd,
           }
           cursor_idx = input_buffer.size();
 
-          std::cout << "\r" << cwd << "\n> \33[K" << input_buffer << std::flush;
+          std::cout << "\r>\33[K" << input_buffer << std::flush;
         }
       }
     }
