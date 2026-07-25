@@ -62,8 +62,12 @@ make
 ./gits
 ```
 
-### Other Makefile targets
+### Clean Build Directory
 ```bash
 make clean   # remove build/ and the gits binary
-make fmt     # format all src/*.cpp and src/*.hpp with clang-format
+```
+
+### Format Source files
+```bash
+make fmt    # format all files inside include/ and src/
 ```
