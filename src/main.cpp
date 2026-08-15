@@ -34,9 +34,6 @@ int main()
 
   std::vector<std::string> directory_cache;
 
-  std::cout << "SHELL\n";
-  std::cout << "type 'exit' to exit out of shell\n";
-
   std::string previous_wd = "";
 
   bool cd_ran = true;

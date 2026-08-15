@@ -30,8 +30,7 @@ void updateLogCache(std::string home, std::vector<std::string> &history_cache,
   std::ofstream shell_history_file(home + "/.local/share/.gits_history",
                                    std::ios::app);
   if (!shell_history_file.is_open()) {
-    std::cerr << "GitS Error: Could not open shell history file for writing.\n";
-    return;
+    std::cerr << "jsh Error: Could not open shell history file for writing.\n"; return;
   }
 
   // Reassemble tokens into a single command line string.

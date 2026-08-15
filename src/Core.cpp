@@ -65,6 +65,19 @@ std::vector<std::string> tokenize(const std::string &input)
       flush();
       tokens.push_back("<");
     }
+    else if (c == '"') {
+      flush();
+      i++;
+      while (i < input.size() && input[i] != '"') {
+        token += input[i];
+        i++;
+      }
+      if (i >= input.size()) {
+        std::cerr << "ERROR: unterminated quoted string.\n";
+      }
+      tokens.push_back(token);
+      token.clear();
+    }
     else {
       token += c;
     }
@@ -232,12 +245,12 @@ void execute_external_commands(const std::vector<std::string> &args)
   pid_t pid = fork();
 
   if (pid < 0) {
-    std::cerr << "GitS Error: Failed to fork process.\n";
+    std::cerr << "jsh Error: Failed to fork process.\n";
     return;
   }
   else if (pid == 0) {
     if (execvp(c_args[0], c_args.data()) == -1) {
-      std::cerr << "GitS: " << c_args[0] << ": command not found.\n";
+      std::cerr << "jsh: " << c_args[0] << ": command not found.\n";
     }
     exit(EXIT_FAILURE);
   }

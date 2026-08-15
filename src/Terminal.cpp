@@ -69,11 +69,20 @@ std::string read_input_line(const std::string &cwd,
   size_t search_idx = 0;
   std::vector<int> search_results;
 
+  bool escape = false;
+
   int ch;
 
   while ((ch = getchar()) != EOF) {
-    if (ch == '\n' || ch == '\r')
-      break;
+    if (ch == '\n' || ch == '\r') {
+      if (escape) {
+        std::cout << char(ch);
+        escape = false;
+      }
+      else {
+        break;
+      }
+    }
 
     // Ctrl+C: cancel current line.
     else if (ch == 3) {
@@ -126,6 +135,10 @@ std::string read_input_line(const std::string &cwd,
           std::cout << "\b";
         std::cout << std::flush;
       }
+    }
+
+    else if (ch == 92) {
+      escape = true;
     }
 
     // Escape sequences: arrow keys.
@@ -203,7 +216,7 @@ std::string read_input_line(const std::string &cwd,
           }
           cursor_idx = input_buffer.size();
 
-          std::cout << "\r>\33[K" << input_buffer << std::flush;
+          std::cout << "\r>\33[K " << input_buffer << std::flush;
         }
 
         // Down arrow: step forward through history.
@@ -235,7 +248,7 @@ std::string read_input_line(const std::string &cwd,
           }
           cursor_idx = input_buffer.size();
 
-          std::cout << "\r>\33[K" << input_buffer << std::flush;
+          std::cout << "\r>\33[K " << input_buffer << std::flush;
         }
       }
     }

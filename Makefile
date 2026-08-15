@@ -4,7 +4,7 @@ CXXFLAGS := -std=c++20 -Wall -Wextra -Iinclude -MMD -MP
 LDLIBS   := -lgit2
 
 # Target executable name
-TARGET   := gits
+TARGET   := jsh
 
 # Directories
 SRC_DIR  := src

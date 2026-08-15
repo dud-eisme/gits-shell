@@ -1,4 +1,4 @@
-# GitS Shell (WIP)
+# joeSH (WIP)
 
 A custom C++ Unix shell and REPL featuring a raw-mode terminal engine, dynamic multiline navigation, and integrated Git repository tracking.
 
@@ -31,7 +31,7 @@ The codebase utilizes a clean, decoupled design pattern separating blueprints (`
 │   ├── Git.hpp              # Repository/branch resolution via libgit2
 │   ├── Git.cpp
 │   └── main.cpp             # Global REPL loop execution block and raw mode manager
-├── .gitignore               # Excludes binary footprints (gits) and build/ artifacts
+├── .gitignore               # Excludes binary footprints (joesh) and build/ artifacts
 ├── Makefile                 # Automated build directives compilation matrix
 └── README.md                # Project architecture overview and future roadmap
 ```
@@ -59,12 +59,12 @@ make
 
 ### Launch the shell
 ```bash
-./gits
+./jsh
 ```
 
 ### Clean Build Directory
 ```bash
-make clean   # remove build/ and the gits binary
+make clean   # remove build/ and the joesh binary
 ```
 
 ### Format Source files
