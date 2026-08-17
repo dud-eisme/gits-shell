@@ -4,12 +4,12 @@
 namespace Shell::Git {
 
 // e.g. "https://github.com/user/repo.git" -> "repo".
-std::string get_repo_name_from_remote(git_repository *repo_name)
+std::string getRepoNameFromRemote(git_repository *repoName)
 {
   git_remote *remote = nullptr;
   std::string repo;
 
-  if (git_remote_lookup(&remote, repo_name, "origin") == 0) {
+  if (git_remote_lookup(&remote, repoName, "origin") == 0) {
     const char *url = git_remote_url(remote);
     if (url) {
       std::string u(url);
@@ -25,9 +25,9 @@ std::string get_repo_name_from_remote(git_repository *repo_name)
 }
 
 // Fallback when there's no "origin" remote: last folder in the working dir.
-std::string get_repo_name_from_dir(git_repository *repo_name)
+std::string getRepoNameFromDir(git_repository *repoName)
 {
-  const char *workdir = git_repository_workdir(repo_name);
+  const char *workdir = git_repository_workdir(repoName);
   if (!workdir) {
     return "";
   }
@@ -41,29 +41,27 @@ std::string get_repo_name_from_dir(git_repository *repo_name)
   return (pos == std::string::npos) ? path : path.substr(pos + 1);
 }
 
-void get_git_info(std::string &repo, std::string &branch)
+void getGitInfo(std::string &repo, std::string &branch)
 {
-  git_libgit2_init();
   git_reference *head = nullptr;
-  git_repository *repo_name = nullptr;
-  const char *branch_name = nullptr;
+  git_repository *repoName = nullptr;
+  const char *branchName = nullptr;
 
-  if (git_repository_open(&repo_name, ".") == 0) {
-    repo = get_repo_name_from_remote(repo_name);
+  if (git_repository_open(&repoName, ".") == 0) {
+    repo = getRepoNameFromRemote(repoName);
     if (repo.empty()) {
-      repo = get_repo_name_from_dir(repo_name);
+      repo = getRepoNameFromDir(repoName);
     }
-    if (git_repository_head(&head, repo_name) == 0) {
+    if (git_repository_head(&head, repoName) == 0) {
       if (git_reference_is_branch(head)) {
-        git_branch_name(&branch_name, head);
+        git_branch_name(&branchName, head);
       }
     }
   }
-  branch = branch_name ? branch_name : ""; // avoid assigning nullptr
+  branch = branchName ? branchName : ""; // avoid assigning nullptr
 
-  git_repository_free(repo_name);
+  git_repository_free(repoName);
   git_reference_free(head);
-  git_libgit2_shutdown();
 }
 
 } // namespace Shell::Git

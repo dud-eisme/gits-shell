@@ -5,32 +5,34 @@
 
 namespace Shell::History {
 
-void initLogCache(std::string home, std::vector<std::string> &history_cache)
+void initLogCache(std::string home, std::vector<std::string> &historyCache)
 {
-  std::ifstream shell_history_file(home + "/.local/share/.gits_history");
+  std::ifstream shellHistoryFile(home + "/.jsh_history");
 
   // No history file yet — nothing to load.
-  if (!shell_history_file.is_open()) {
+  if (!shellHistoryFile.is_open()) {
     return;
   }
 
   std::string line;
-  while (std::getline(shell_history_file, line)) {
+  while (std::getline(shellHistoryFile, line)) {
     if (!line.empty()) {
-      history_cache.push_back(line);
+      historyCache.push_back(line);
     }
   }
 
-  shell_history_file.close();
+  shellHistoryFile.close();
 }
 
-void updateLogCache(std::string home, std::vector<std::string> &history_cache,
+void updateLogCache(std::string home, std::vector<std::string> &historyCache,
                     std::vector<std::string> &args)
 {
-  std::ofstream shell_history_file(home + "/.local/share/.gits_history",
-                                   std::ios::app);
-  if (!shell_history_file.is_open()) {
-    std::cerr << "jsh Error: Could not open shell history file for writing.\n"; return;
+  std::ofstream shellHistoryFile(home + "/.jsh_history",
+                                 std::ios::app);
+  if (!shellHistoryFile.is_open()) {
+    std::cerr
+        << "joesh Error: Could not open shell history file for writing.\n";
+    return;
   }
 
   // Reassemble tokens into a single command line string.
@@ -43,13 +45,12 @@ void updateLogCache(std::string home, std::vector<std::string> &history_cache,
   }
 
   // Skip empty lines and immediate duplicates.
-  if (!line.empty() &&
-      (history_cache.empty() || line != history_cache.back())) {
-    history_cache.push_back(line);
-    shell_history_file << line << '\n';
+  if (!line.empty() && (historyCache.empty() || line != historyCache.back())) {
+    historyCache.push_back(line);
+    shellHistoryFile << line << '\n';
   }
 
-  shell_history_file.close();
+  shellHistoryFile.close();
 }
 
 } // namespace Shell::History

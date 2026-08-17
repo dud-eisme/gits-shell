@@ -13,6 +13,7 @@ void cd(const std::string &home, std::string &previous_wd,
         std::vector<std::string> &args);
 
 // Clear the persisted shell history file.
-void history_clear(const std::string &home);
+void historyClear(const std::string &home,
+                  std::vector<std::string> &history_cache);
 
 } // namespace Shell::BuiltIn

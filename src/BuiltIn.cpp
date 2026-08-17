@@ -17,36 +17,36 @@ void pwd(std::vector<std::string> &args)
   std::cout << std::filesystem::current_path().string() << '\n';
 }
 
-void cd(const std::string &home, std::string &previous_wd,
+void cd(const std::string &home, std::string &previousWd,
         std::vector<std::string> &args)
 {
-  std::string target_dir;
+  std::string targetDir;
 
   if (args.size() == 1) {
-    target_dir = home;
+    targetDir = home;
   }
   else if (args.size() == 2) {
-    target_dir = args[1];
+    targetDir = args[1];
 
-    if (target_dir == "~") {
-      target_dir = home;
+    if (targetDir == "~") {
+      targetDir = home;
     }
-    else if (target_dir.starts_with("~/")) {
-      target_dir.erase(0, 1);
-      target_dir = home + target_dir;
+    else if (targetDir.starts_with("~/")) {
+      targetDir.erase(0, 1);
+      targetDir = home + targetDir;
     }
-    else if (target_dir == "-") {
+    else if (targetDir == "-") {
       // `cd -`: return to the previous working directory.
-      if (previous_wd.empty()) {
+      if (previousWd.empty()) {
         std::cerr << "cd: OLDPWD not set\n";
         return;
       }
 
-      target_dir = previous_wd;
+      targetDir = previousWd;
 
-      if (target_dir.starts_with("~/")) {
-        target_dir.erase(0, 1);
-        target_dir = home + target_dir;
+      if (targetDir.starts_with("~/")) {
+        targetDir.erase(0, 1);
+        targetDir = home + targetDir;
       }
     }
   }
@@ -55,27 +55,30 @@ void cd(const std::string &home, std::string &previous_wd,
     return;
   }
 
-  std::string current_dir = std::filesystem::current_path().string();
+  std::string currentDir = std::filesystem::current_path().string();
 
-  if (chdir(target_dir.c_str()) != 0) {
+  if (chdir(targetDir.c_str()) != 0) {
     perror("cd");
   }
   else {
-    previous_wd = current_dir;
+    previousWd = currentDir;
   }
 }
 
-void history_clear(const std::string &home)
+void historyClear(const std::string &home,
+                  std::vector<std::string> &historyCache)
 {
-  std::ofstream shell_history_file(home + "/.local/share/.gits_history");
+  std::ofstream shellHistoryFile(home + "/.local/share/.joesh_history");
 
-  if (!shell_history_file.is_open()) {
+  if (!shellHistoryFile.is_open()) {
     std::cerr << "history.clear: failed to open history file.\n";
     return;
   }
 
-  shell_history_file << "";
-  shell_history_file.close();
+  shellHistoryFile << "";
+  shellHistoryFile.close();
+
+  historyCache.clear();
 }
 
 } // namespace Shell::BuiltIn

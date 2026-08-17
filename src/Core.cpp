@@ -1,4 +1,5 @@
 #include <array>
+#include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
 #include <iostream>
@@ -17,14 +18,20 @@ namespace Shell::Core {
 // Maps builtin command names to their handlers.
 static const std::unordered_map<std::string,
                                 void (*)(const std::string &, std::string &,
+                                         std::vector<std::string> &,
                                          std::vector<std::string> &)>
-    builtin_registry = {
-        {"pwd", [](const std::string &, std::string &,
-                   std::vector<std::string> &a) { Shell::BuiltIn::pwd(a); }},
-        {"cd", Shell::BuiltIn::cd},
+    builtinRegistry = {
+        {"pwd",
+         [](const std::string &, std::string &, std::vector<std::string> &a,
+            std::vector<std::string> &) { Shell::BuiltIn::pwd(a); }},
+        {"cd",
+         [](const std::string &h, std::string &pwd,
+            std::vector<std::string> &args,
+            std::vector<std::string> &) { Shell::BuiltIn::cd(h, pwd, args); }},
         {"history.clear",
-         [](const std::string &h, std::string &, std::vector<std::string> &) {
-           Shell::BuiltIn::history_clear(h);
+         [](const std::string &h, std::string &, std::vector<std::string> &,
+            std::vector<std::string> &hc) {
+           Shell::BuiltIn::historyClear(h, hc);
          }}};
 
 // Splits a raw input line into tokens, splitting out |, <, >, >> even
@@ -49,6 +56,10 @@ std::vector<std::string> tokenize(const std::string &input)
     }
     else if (c == '|') {
       flush();
+      if (tokens.empty() || tokens.back() == "|") {
+        std::cerr << "jsh: expected a command, but found a pipe.\n";
+        return {};
+      }
       tokens.push_back("|");
     }
     else if (c == '>') {
@@ -73,7 +84,7 @@ std::vector<std::string> tokenize(const std::string &input)
         i++;
       }
       if (i >= input.size()) {
-        std::cerr << "ERROR: unterminated quoted string.\n";
+        std::cerr << "jsh: unterminated quoted string.\n";
       }
       tokens.push_back(token);
       token.clear();
@@ -89,7 +100,7 @@ std::vector<std::string> tokenize(const std::string &input)
 
 // Splits tokens into pipeline stages on '|', attaching </>/>> filenames
 // to whichever stage they appear in.
-std::vector<Command> parse_pipeline(const std::vector<std::string> &tokens)
+std::vector<Command> parsePipeline(const std::vector<std::string> &tokens)
 {
   std::vector<Command> commands;
   Command command;
@@ -103,19 +114,19 @@ std::vector<Command> parse_pipeline(const std::vector<std::string> &tokens)
     }
     else if (token == "<") {
       if (i + 1 < tokens.size()) {
-        command.input_file = tokens[++i];
+        command.inputFile = tokens[++i];
       }
       else {
-        std::cerr << "ERROR: Expected file name after '<'.\n";
+        std::cerr << "jsh: Expected file name after '<'.\n";
       }
     }
     else if (token == ">" || token == ">>") {
       command.append = (token == ">>");
       if (i + 1 < tokens.size()) {
-        command.output_file = tokens[++i];
+        command.outputFile = tokens[++i];
       }
       else {
-        std::cerr << "ERROR: Expected file name after '" << token << "'.\n";
+        std::cerr << "jsh: Expected file name after '" << token << "'.\n";
       }
     }
     else {
@@ -129,7 +140,7 @@ std::vector<Command> parse_pipeline(const std::vector<std::string> &tokens)
 
 // Forks one child per stage, wiring pipes/redirects with dup2, then waits
 // for all of them.
-void execute_pipeline(std::vector<Command> &commands)
+void executePipeline(std::vector<Command> &commands)
 {
   if (commands.size() == 0) {
     return;
@@ -140,7 +151,7 @@ void execute_pipeline(std::vector<Command> &commands)
       commands.size() > 1 ? commands.size() - 1 : 0);
   for (auto &p : pipes) {
     if (pipe(p.data()) == -1) {
-      std::cerr << "ERROR: failed to create pipe.\n";
+      std::cerr << "jsh: failed to create pipe.\n";
       return;
     }
   }
@@ -155,7 +166,7 @@ void execute_pipeline(std::vector<Command> &commands)
 
     pid_t pid = fork();
     if (pid < 0) {
-      std::cerr << "ERROR: could not fork process.\n";
+      std::cerr << "jsh: could not fork process.\n";
       return;
     }
 
@@ -163,10 +174,10 @@ void execute_pipeline(std::vector<Command> &commands)
       if (i > 0) {
         dup2(pipes[i - 1][0], STDIN_FILENO);
       }
-      if (!cmd.input_file.empty()) {
-        int fd = open(cmd.input_file.c_str(), O_RDONLY);
+      if (!cmd.inputFile.empty()) {
+        int fd = open(cmd.inputFile.c_str(), O_RDONLY);
         if (fd == -1) {
-          perror(("ERROR: " + cmd.input_file).c_str());
+          perror(("jsh: " + cmd.inputFile).c_str());
           _exit(EXIT_FAILURE);
         }
         dup2(fd, STDIN_FILENO);
@@ -176,11 +187,11 @@ void execute_pipeline(std::vector<Command> &commands)
       if (i + 1 < commands.size()) {
         dup2(pipes[i][1], STDOUT_FILENO);
       }
-      if (!cmd.output_file.empty()) {
+      if (!cmd.outputFile.empty()) {
         int flags = O_WRONLY | O_CREAT | (cmd.append ? O_APPEND : O_TRUNC);
-        int fd = open(cmd.output_file.c_str(), flags, 0644);
+        int fd = open(cmd.outputFile.c_str(), flags, 0644);
         if (fd == -1) {
-          perror(("ERROR: " + cmd.output_file).c_str());
+          perror(("jsh: " + cmd.outputFile).c_str());
           _exit(EXIT_FAILURE);
         }
         dup2(fd, STDOUT_FILENO);
@@ -193,14 +204,14 @@ void execute_pipeline(std::vector<Command> &commands)
         close(p[1]);
       }
 
-      std::vector<char *> c_args;
+      std::vector<char *> cArgs;
       for (auto &a : cmd.args) {
-        c_args.push_back(const_cast<char *>(a.c_str()));
+        cArgs.push_back(const_cast<char *>(a.c_str()));
       }
-      c_args.push_back(nullptr);
+      cArgs.push_back(nullptr);
 
-      execvp(c_args[0], c_args.data());
-      std::cerr << "ERROR: " << c_args[0] << ": command not found.\n";
+      execvp(cArgs[0], cArgs.data());
+      std::cerr << "jsh: Unknown command: " << cArgs[0] << "\n";
       _exit(EXIT_FAILURE);
     }
     else {
@@ -220,7 +231,7 @@ void execute_pipeline(std::vector<Command> &commands)
   }
 }
 
-bool has_pipeline_syntax(const std::vector<std::string> &tokens)
+bool hasPipelineSyntax(const std::vector<std::string> &tokens)
 {
   for (const auto &t : tokens) {
     if (t == "|" || t == "<" || t == ">" || t == ">>") {
@@ -231,26 +242,26 @@ bool has_pipeline_syntax(const std::vector<std::string> &tokens)
 }
 
 // Runs an external binary via fork + execvp.
-void execute_external_commands(const std::vector<std::string> &args)
+void executeExternalCommands(const std::vector<std::string> &args)
 {
   if (args.empty())
     return;
 
-  std::vector<char *> c_args;
+  std::vector<char *> cArgs;
   for (const auto &arg : args) {
-    c_args.push_back(const_cast<char *>(arg.c_str()));
+    cArgs.push_back(const_cast<char *>(arg.c_str()));
   }
-  c_args.push_back(nullptr);
+  cArgs.push_back(nullptr);
 
   pid_t pid = fork();
 
   if (pid < 0) {
-    std::cerr << "jsh Error: Failed to fork process.\n";
+    std::cerr << "jsh : Failed to fork process.\n";
     return;
   }
   else if (pid == 0) {
-    if (execvp(c_args[0], c_args.data()) == -1) {
-      std::cerr << "jsh: " << c_args[0] << ": command not found.\n";
+    if (execvp(cArgs[0], cArgs.data()) == -1) {
+      std::cerr << "jsh: Unknown command: " << cArgs[0] << "\n";
     }
     exit(EXIT_FAILURE);
   }
@@ -261,8 +272,9 @@ void execute_external_commands(const std::vector<std::string> &args)
 }
 
 // Routes a command to a builtin handler, or falls back to an external process.
-void dispatch_command(const std::string &home, std::string &previous_wd,
-                      std::vector<std::string> &args)
+void dispatchCommand(const std::string &home, std::string &previousWd,
+                     std::vector<std::string> &args,
+                     std::vector<std::string> &historyCache)
 {
   if (args.empty())
     return;
@@ -272,14 +284,14 @@ void dispatch_command(const std::string &home, std::string &previous_wd,
     std::exit(0);
   }
 
-  auto it = builtin_registry.find(args[0]);
-  if (it != builtin_registry.end()) {
-    it->second(home, previous_wd, args);
+  auto it = builtinRegistry.find(args[0]);
+  if (it != builtinRegistry.end()) {
+    it->second(home, previousWd, args, historyCache);
   }
   else {
-    Shell::Terminal::set_raw_mode(false);
-    execute_external_commands(args);
-    Shell::Terminal::set_raw_mode(true);
+    Shell::Terminal::setRawMode(false);
+    executeExternalCommands(args);
+    Shell::Terminal::setRawMode(true);
   }
 }
 

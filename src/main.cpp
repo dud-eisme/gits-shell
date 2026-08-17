@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <filesystem>
+#include <git2.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -10,74 +11,76 @@
 #include "Terminal.hpp"
 
 // Resolves $HOME, falling back to "/" if unset or empty.
-std::string resolve_home_dir()
+std::string resolveHomeDir()
 {
-  const char *raw_home = std::getenv("HOME");
-  if (raw_home == nullptr) {
+  const char *rawHome = std::getenv("HOME");
+  if (rawHome == nullptr) {
     std::cerr << "Warning: $HOME environment variable is not set! Defaulting "
                  "to root.\n";
     return "/";
   }
-  if (raw_home[0] == '\0') {
+  if (rawHome[0] == '\0') {
     std::cerr << "Warning: $HOME is set but empty! Defaulting to root.\n";
     return "/";
   }
-  return std::string(raw_home);
+  return std::string(rawHome);
 }
 
-const std::string home = resolve_home_dir();
+const std::string home = resolveHomeDir();
 
 int main()
 {
-  std::vector<std::string> history_cache;
-  Shell::History::initLogCache(home, history_cache);
+  std::vector<std::string> historyCache;
+  Shell::History::initLogCache(home, historyCache);
 
-  std::vector<std::string> directory_cache;
+  std::vector<std::string> directoryCache;
 
-  std::string previous_wd = "";
+  std::string previousWd = "";
 
-  bool cd_ran = true;
+  bool cdRan = true;
 
-  std::string git_repo = "";
-  std::string git_branch = "";
+  std::string gitRepo = "";
+  std::string gitBranch = "";
+
+  git_libgit2_init();
 
   while (true) {
-    std::filesystem::path cwd_path = std::filesystem::current_path();
-    std::string cwd = cwd_path.string();
+    std::filesystem::path cwdPath = std::filesystem::current_path();
+    std::string cwd = cwdPath.string();
 
     // Show '~' instead of the full home path.
     if (cwd.starts_with(home))
       cwd = "~" + cwd.substr(home.length());
 
     // Tag the prompt if we're inside a git repo.
-    if (std::filesystem::is_directory(cwd_path / ".git")) {
-      Shell::Git::get_git_info(git_repo, git_branch);
-      if (cd_ran) {
-        std::cout << "Repository: " << git_repo
-                  << "\nCurrent Branch: " << git_branch << "\n";
-        cd_ran = false;
+    if (std::filesystem::is_directory(cwdPath / ".git")) {
+      Shell::Git::getGitInfo(gitRepo, gitBranch);
+      if (cdRan) {
+        std::cout << "Repository: " << gitRepo
+                  << "\nCurrent Branch: " << gitBranch << "\n";
+        cdRan = false;
       }
-      cwd += " (" + git_branch + ")";
+      cwd += " (" + gitBranch + ")";
     }
     else {
-      git_repo = "";
-      git_branch = "";
+      gitRepo = "";
+      gitBranch = "";
     }
 
     std::cout << cwd << "\n> " << std::flush;
 
-    Shell::Terminal::set_raw_mode(true);
-    Shell::Terminal::refresh_directory_cache(directory_cache);
+    Shell::Terminal::setRawMode(true);
+    Shell::Terminal::refreshDirectoryCache(directoryCache);
 
-    std::string input_buffer =
-        Shell::Terminal::read_input_line(cwd, history_cache, directory_cache);
+    std::string inputBuffer =
+        Shell::Terminal::readInputLine(cwd, historyCache, directoryCache);
 
-    Shell::Terminal::set_raw_mode(false);
+    Shell::Terminal::setRawMode(false);
     std::cout << "\n";
 
-    std::vector<std::string> args = Shell::Core::tokenize(input_buffer);
+    std::vector<std::string> args = Shell::Core::tokenize(inputBuffer);
 
-    Shell::History::updateLogCache(home, history_cache, args);
+    Shell::History::updateLogCache(home, historyCache, args);
 
     // Tilde expansion.
     for (size_t i = 0; i < args.size(); i++) {
@@ -90,17 +93,19 @@ int main()
     }
 
     if (args[0] == "cd") {
-      cd_ran = true;
+      cdRan = true;
     }
 
-    if (Shell::Core::has_pipeline_syntax(args)) {
-      auto commands = Shell::Core::parse_pipeline(args);
-      Shell::Terminal::set_raw_mode(false);
-      Shell::Core::execute_pipeline(commands);
-      Shell::Terminal::set_raw_mode(true);
+    if (Shell::Core::hasPipelineSyntax(args)) {
+      auto commands = Shell::Core::parsePipeline(args);
+      Shell::Terminal::setRawMode(false);
+      Shell::Core::executePipeline(commands);
+      Shell::Terminal::setRawMode(true);
     }
     else {
-      Shell::Core::dispatch_command(home, previous_wd, args);
+      Shell::Core::dispatchCommand(home, previousWd, args, historyCache);
     }
   }
+
+  git_libgit2_shutdown();
 }
